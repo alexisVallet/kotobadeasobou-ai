@@ -10,7 +10,7 @@ from words import WORDS
 _ALL_CHARS = np.array(WORDS).view('U1').reshape((len(WORDS), -1))
 
 
-def compute_best_word(remaining_words):
+def compute_best_word(remaining_words, blacklist):
     remaining_chars = np.array(remaining_words).view('U1').reshape((len(remaining_words), -1))
     a, b = np.unique(remaining_chars, return_counts=True)
     char_to_count = {ch: co for (ch, co) in zip(a, b)}
@@ -18,7 +18,7 @@ def compute_best_word(remaining_words):
         _ALL_CHARS[i].view('U4')[0]: sum([char_to_count[c] for c in np.unique(_ALL_CHARS[i]) if c in char_to_count]) for i
         in range(_ALL_CHARS.shape[0])
     }
-    best_word, score = max(word_score.items(), key=lambda t: t[1])
+    best_word, score = max([(w, s) for w, s in word_score.items() if w not in blacklist], key=lambda t: t[1])
 
     return best_word, score
 
@@ -46,7 +46,7 @@ def play_word(first_word, word):
             and all([c in w for c in yellows])
             and not any([c in w for c in grays])
         ]
-        best_word, score = compute_best_word(remaining_words)
+        best_word, score = compute_best_word(remaining_words, blacklist=guesses)
         guesses.append(best_word)
         j += 1
     return word, (word == best_word), guesses
@@ -57,7 +57,7 @@ def main():
     lost_words = []
 
     # No need to compute the same first word every time.
-    first_word = compute_best_word(WORDS)
+    first_word = compute_best_word(WORDS, blacklist=[])
 
     pool = mp.Pool()
 
