@@ -7,28 +7,32 @@ from functools import partial
 
 import tqdm
 import numpy as np
+import jaconv
 
-from words import WORDS
+from words import TARGET_WORDS, VALID_GUESSES
 
 
 def is_hiragana_word(w):
     return all(chr(0x3041) <= c <= chr(0x3096) for c in w)
 
 
-_WORDS_HIRAGANA = [
-    w for w in WORDS if is_hiragana_word(w)
+_TARGET_WORDS_HIRAGANA = [
+    w for w in TARGET_WORDS if is_hiragana_word(w)
 ]
-_WORDS_KATAKANA = [
-    w for w in WORDS if not is_hiragana_word(w)
+_TARGET_WORDS_KATAKANA = [
+    w for w in TARGET_WORDS if not is_hiragana_word(w)
+]
+_VALID_GUESSES_KATAKANA = [
+    jaconv.hira2kata(w) for w in VALID_GUESSES
 ]
 
 
-def compute_best_word(all_words, remaining_words, blacklist, greens_and_yellows):
+def compute_best_word(valid_guesses, remaining_words, blacklist, greens_and_yellows):
     remaining_chars = np.array(remaining_words).view('U1').reshape((len(remaining_words), -1))
     a, b = np.unique(remaining_chars, return_counts=True)
     char_to_count = {ch: co for (ch, co) in zip(a, b)}
     word_scores = {}
-    for word_chars in all_words:
+    for word_chars in valid_guesses:
         word_score = 0
         scored_chars = set()
 
@@ -70,10 +74,12 @@ def step(remaining_words, j, best_word, target_word=None):
 
 def play_word(first_word_hiragana, first_word_katakana, word):
     if is_hiragana_word(word):
-        all_words = _WORDS_HIRAGANA
+        all_words = _TARGET_WORDS_HIRAGANA
+        valid_guesses = VALID_GUESSES
         best_word = first_word_hiragana
     else:
-        all_words = _WORDS_KATAKANA
+        all_words = _TARGET_WORDS_KATAKANA
+        valid_guesses = _VALID_GUESSES_KATAKANA
         best_word = first_word_katakana
     remaining_words = all_words
     j = 0
@@ -94,7 +100,7 @@ def play_word(first_word_hiragana, first_word_katakana, word):
             best_word = remaining_words.pop(0)
         else:
             # Otherwise, we reduce the search space until we can.
-            best_word = compute_best_word(all_words, remaining_words, blacklist=guesses,
+            best_word = compute_best_word(valid_guesses, remaining_words, blacklist=guesses,
                                           greens_and_yellows=all_greens_and_yellows)
         guesses.append(best_word)
         j += 1
@@ -103,13 +109,13 @@ def play_word(first_word_hiragana, first_word_katakana, word):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--n_test_words", type=int, default=len(WORDS))
+    parser.add_argument("--n_test_words", type=int, default=len(TARGET_WORDS))
     parser.add_argument("--words", type=str, default=None, nargs='*')
     args = parser.parse_args()
     if args.words is not None:
         words_to_test = args.words
     else:
-        words_to_test = copy.deepcopy(WORDS)
+        words_to_test = copy.deepcopy(TARGET_WORDS)
         random.shuffle(words_to_test)
         words_to_test = words_to_test[:args.n_test_words]
     won_words = []
@@ -118,8 +124,8 @@ def main():
     # No need to compute the same first word every time. We compute it with 10x the resources because
     # why not.
     print(f"Precomputing the first word...")
-    first_word_hiragana = compute_best_word(_WORDS_HIRAGANA, _WORDS_HIRAGANA, blacklist=[], greens_and_yellows=frozenset())
-    first_word_katakana = compute_best_word(_WORDS_KATAKANA, _WORDS_KATAKANA, blacklist=[], greens_and_yellows=frozenset())
+    first_word_hiragana = compute_best_word(VALID_GUESSES, _TARGET_WORDS_HIRAGANA, blacklist=[], greens_and_yellows=frozenset())
+    first_word_katakana = compute_best_word(_VALID_GUESSES_KATAKANA, _TARGET_WORDS_KATAKANA, blacklist=[], greens_and_yellows=frozenset())
 
     pool = mp.Pool()
 

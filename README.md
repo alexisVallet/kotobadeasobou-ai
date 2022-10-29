@@ -3,7 +3,8 @@ Simple, greedy algorithm that solves every word in [kotoba de asobou](https://ta
 without hints and without hard mode.
 
 ## Running the code
-This code depends on `numpy` and `tqdm`. It was tested with Python 3.10. You can install them by running:
+This code depends on `numpy`, `tqdm` and `jaconv`. It was tested with Python 3.10. You can install dependencies by 
+running:
 ```bash
 pip3 install -r requirements.txt
 ```
@@ -35,7 +36,3 @@ Although this algorithm does seem to win 100% of the time with the 2504 words of
 definitely not  optimal in any other sense. For instance, I expect that planning algorithms like 
 MCTS should find more clever solutions that can win faster, or win with higher probability in more
 difficult variants of the game.
-
-Also note that this algorithm currently only uses words from the possible target words (2504 words), and does 
-not consider every possible valid guess (more than 300,000 words). I expect the game is slightly easier when 
-using all possible valid guesses, though the branching factor is much higher.
