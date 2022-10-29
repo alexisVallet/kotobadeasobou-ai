@@ -1,3 +1,6 @@
+# The list of possible target words, taken straight from the source code of the game:
+# https://github.com/taximanli/kotobade-asobou/blob/main/src/constants/wordlist.ts
+# Credits go to the original authors!
 WORDS = [
     'ちいさな',
     'がくせい',

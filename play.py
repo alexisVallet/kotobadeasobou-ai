@@ -1,5 +1,4 @@
 import argparse
-import math
 
 import copy
 import multiprocessing as mp
@@ -8,7 +7,6 @@ from functools import partial
 
 import tqdm
 import numpy as np
-from scipy.special import softmax
 
 from words import WORDS
 
@@ -129,13 +127,12 @@ def main():
 
     for word, won, guesses in tqdm.tqdm(out_it, total=len(words_to_test)):
         if won:
-            won_words.append(word)
+            won_words.append((word, guesses))
         else:
             lost_words.append((word, guesses))
     print(f"{len(won_words)=}")
     print(f"{len(lost_words)=}")
     print(f"win rate = {len(won_words) / len(words_to_test)}")
-    print(lost_words)
 
 
 if __name__ == '__main__':
